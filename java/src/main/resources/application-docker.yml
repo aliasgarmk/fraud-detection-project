@@ -1,0 +1,22 @@
+# Docker profile — overrides application.yml when SPRING_PROFILES_ACTIVE=docker.
+# All settings not listed here are inherited from application.yml.
+
+fraud-api:
+  base-url: ${FRAUD_API_BASE_URL:http://fraud-api:8000}
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/fraud_client_db}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:fraud_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:changeme}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  # H2 console is not meaningful outside local dev
+  h2:
+    console:
+      enabled: false

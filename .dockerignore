@@ -1,0 +1,54 @@
+# Root-level .dockerignore — used when building the fraud-api image (context: .)
+# Keep this file tight so only what the API needs is sent to the Docker daemon.
+
+# Python virtual environments
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE and OS files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Secrets
+.env
+*.env
+
+# Java folder (has its own context + .dockerignore)
+java/
+
+# Dashboard (has its own context)
+python/dashboard/
+
+# Docker files themselves
+docker-compose.yml
+docker/
+
+# Docs and design docs
+*.md
+*.docx
+
+# Jupyter / notebooks
+*.ipynb
+
+# Training data (large CSV — not needed at API runtime)
+python/data/
+
+# ML training scripts (not needed at runtime, only python/models/ is)
+python/ml_training/
+
+# Misc project files
+*.pyproj
+*.slnx

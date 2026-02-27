@@ -1,0 +1,98 @@
+version: '3.9'
+
+# ── Shared network (all services can resolve each other by name) ───────────────
+networks:
+  fraud-net:
+    driver: bridge
+
+# ── Persistent storage ────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+
+services:
+
+  # ── PostgreSQL 16 ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fraud_user
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: fraud_db          # primary DB for the Python API
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - fraud-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_user -d fraud_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ── Python FastAPI ────────────────────────────────────────────────────────────
+  fraud-api:
+    build:
+      context: .
+      dockerfile: python/api/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://fraud_user:changeme@postgres:5432/fraud_db
+      MODEL_PATH: models/fraud_model.pkl
+      FRAUD_THRESHOLD: "0.5"
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "8000"
+      LOG_LEVEL: info
+    ports:
+      - "8000:8000"
+    networks:
+      - fraud-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  # ── Java Spring Boot client ───────────────────────────────────────────────────
+  fraud-client:
+    build:
+      context: java
+      dockerfile: Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      FRAUD_API_BASE_URL: http://fraud-api:8000
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fraud_client_db
+      SPRING_DATASOURCE_USERNAME: fraud_user
+      SPRING_DATASOURCE_PASSWORD: changeme
+    ports:
+      - "8080:8080"
+    networks:
+      - fraud-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      fraud-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Streamlit Dashboard ───────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: python/dashboard
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://fraud_user:changeme@postgres:5432/fraud_db
+      FRAUD_API_URL: http://fraud-api:8000
+    ports:
+      - "8501:8501"
+    networks:
+      - fraud-net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped

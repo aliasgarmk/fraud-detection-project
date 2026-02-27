@@ -3,6 +3,37 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# ── Python ────────────────────────────────────────────────────────────────────
+venv/
+env/
+.venv/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+
+# Secrets / local config
+.env
+
+# Generated data (reproducible via generate_data.py)
+python/data/transactions.csv
+
+# Claude internal session data
+.claude/
+
+# ── Java / Maven ──────────────────────────────────────────────────────────────
+java/target/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
 # User-specific files
 *.rsuser
 *.suo

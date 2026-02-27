@@ -1,0 +1,6 @@
+# java-client .dockerignore — build context is java-client/
+target/
+*.iml
+.idea/
+.vscode/
+.DS_Store

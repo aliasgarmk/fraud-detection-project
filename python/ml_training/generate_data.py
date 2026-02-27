@@ -1,12 +1,18 @@
-""" Generate synthetic transaction data for fraud detection.  This script creates realistic transaction data with fraud patterns. Similar to creating test fixtures in Java, but for ML training. """  
+""" Generate synthetic transaction data for fraud detection.  This script creates realistic transaction data with fraud patterns. Similar to creating test fixtures in Java, but for ML training. """
+import os
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import random
 
-# Set random seed for reproducibility (like @Before in JUnit) 
-np.random.seed(42) 
-random.seed(42)  
+# Resolve paths relative to this file so the script works from any directory.
+# ml_training/ lives inside python/, so parent of parent is the project root's python/.
+_PYTHON_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_DATA_PATH = os.path.join(_PYTHON_DIR, 'data', 'transactions.csv')
+
+# Set random seed for reproducibility (like @Before in JUnit)
+np.random.seed(42)
+random.seed(42)
 def generate_transactions(n_samples=10000, fraud_ratio=0.1):     
     """ Generate synthetic transaction dataset.Args: n_samples: Total number of transactions to generate fraud_ratio: Percentage of fraudulent transactions (0.1 = 10%) Returns: pandas DataFrame with transaction data     """     
     n_fraud = int(n_samples * fraud_ratio)
@@ -145,36 +151,33 @@ def add_engineered_features(df):
     print(f"Added {4} engineered features")          
     return df  
 
-def save_dataset(df, filepath=' /transactions.csv'):     
-    """Save dataset to CSV file."""     
-    # Ensure directory exists
-    try:
-        df.to_csv(filepath, index=False)
-    except FileNotFoundError:
-        import os
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        df.to_csv(filepath, index=False)
-    print(f"\nDataset saved to: {filepath}")     
+def save_dataset(df, filepath=_DATA_PATH):
+    """Save dataset to CSV file."""
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    df.to_csv(filepath, index=False)
+    print(f"\nDataset saved to: {filepath}")
     print(f"File size: {len(df)} rows x {len(df.columns)} columns")
-    
-    if __name__ == "__main__":
-        # Generate dataset    
-        df = generate_transactions(n_samples=10000, fraud_ratio=0.1)          
-        
-        # Add engineered features     
-        df = add_engineered_features(df)          
-        
-        # Display sample     
-        print("\n" + "="*50)     
-        print("Sample transactions:")     
-        print("="*50)     
-        print(df.head(10))          
-        print("\n" + "="*50)     
-        print("Dataset statistics:")     
-        print("="*50)     
-        print(df.describe())          
-        
-        # Save to file     
-        save_dataset(df)          
-        print("\n✓ Data generation complete!")     
-        print("Next step: Run train_model.py")
+
+
+if __name__ == "__main__":
+    # Generate dataset
+    df = generate_transactions(n_samples=10000, fraud_ratio=0.1)
+
+    # Add engineered features
+    df = add_engineered_features(df)
+
+    # Display sample
+    print("\n" + "="*50)
+    print("Sample transactions:")
+    print("="*50)
+    print(df.head(10))
+
+    print("\n" + "="*50)
+    print("Dataset statistics:")
+    print("="*50)
+    print(df.describe())
+
+    # Save to file
+    save_dataset(df)
+    print("\n[OK] Data generation complete!")
+    print("Next step: Run train_model.py")
