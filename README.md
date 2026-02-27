@@ -35,25 +35,30 @@ and full Docker orchestration with a real-time Streamlit dashboard.
 
 ## Quick Start (Docker)
 
-**Prerequisites:** Docker Desktop >= 24, Docker Compose v2
+**Prerequisites:** Docker Desktop >= 24, Docker Compose v2, Python 3.11+
 
 ```bash
 # 1. Clone the repository
 git clone <repo-url>
 cd fraud-detection-project
 
-# 2. Make sure the trained model exists (skip if python/models/ is already committed)
-venv\Scripts\python.exe python/ml_training/generate_data.py
-venv\Scripts\python.exe python/ml_training/train_model.py
+# 2. One command to rule them all:
+start.bat          # Windows CMD / PowerShell
+bash start.sh      # Git Bash / Linux / macOS
+```
 
-# 3. Start all services
-docker-compose up --build
+The startup script automatically:
+- Checks if Docker is running
+- Skips ML training if `python/models/fraud_model.pkl` already exists
+- Generates data + trains the model if the model is missing
+- Runs `docker-compose up --build`
 
-# 4. Open in browser:
+```
+# Open in browser once services are up:
 #   API docs          -> http://localhost:8000/docs
-#   Java UI           -> http://localhost:8080/actuator/health
+#   Java REST API     -> http://localhost:8080/actuator/health  (JSON health probe)
 #   Dashboard         -> http://localhost:8501          (monitoring)
-#   Check Transaction -> http://localhost:8501 (sidebar: Check Transaction)
+#   Check Transaction -> http://localhost:8501          (sidebar: Check Transaction)
 ```
 
 Stop everything:
@@ -130,6 +135,41 @@ The Java client implements:
 
 ---
 
+## Dashboard (Phase 4 — `http://localhost:8501`)
+
+The Streamlit dashboard has two pages accessible from the sidebar:
+
+### Monitoring (main page)
+Real-time view of all predictions stored in PostgreSQL. Auto-refreshes every 30 s.
+
+| Panel | Description |
+|---|---|
+| KPI cards | Total predictions, fraud count, fraud rate %, average fraud score |
+| Fraud over time | Line chart grouped by day |
+| Score distribution | Histogram of fraud scores |
+| Fraud by merchant | Bar chart by merchant category |
+| Fraud by location | Bar chart by US state |
+| Recent transactions | Last 50 rows table |
+
+### Check Transaction
+Interactive form to submit a transaction to the live fraud API and instantly see the result.
+
+| Field | Options |
+|---|---|
+| Transaction ID | Auto-generated UUID (editable) |
+| Amount | $0.01 – $100,000 |
+| Merchant Category | grocery / restaurant / gas_station / retail / online |
+| Location | AZ / CA / FL / IL / NV / NY / TX / WA |
+| User ID | Free text |
+| Date + Time | Date picker + Time picker (UTC) |
+
+**Result display:**
+- 🚨 **FRAUD DETECTED** (red banner) — if `fraud_score >= 0.5`
+- ✅ **LEGITIMATE TRANSACTION** (green banner) — otherwise
+- Fraud score progress bar, confidence level, processing time, and risk factors
+
+---
+
 ## Environment Variables
 
 ### Python API (`.env` or docker-compose environment)
@@ -152,6 +192,13 @@ The Java client implements:
 | `SPRING_DATASOURCE_URL` | H2 in-memory | JDBC URL (overridden in docker profile) |
 | `SPRING_DATASOURCE_USERNAME` | `sa` | DB username |
 | `SPRING_DATASOURCE_PASSWORD` | _(empty)_ | DB password |
+
+### Dashboard (docker-compose environment)
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | — | PostgreSQL connection string (reads `fraud_db`) |
+| `FRAUD_API_URL` | `http://fraud-api:8000` | Fraud API base URL for Check Transaction page |
 
 ---
 
@@ -282,6 +329,8 @@ fraud-detection-project/
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .env.example
+├── start.bat                   # one-command startup (Windows)
+├── start.sh                    # one-command startup (Git Bash / Linux / macOS)
 ├── README.md
 └── docs/                       # All project documentation
     ├── Fraud_Detection_HLD.docx
